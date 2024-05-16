@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+      body.no-scroll {
+       overflow: hidden;
+      }
+      #app {
+        width: 100%;
+        height: 500vh;
+      }
+      #canvas_main {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0; 
+      }
+
+      .three-perf-ui {
+        z-index: 100;
+      }
+
+      #moveCameraButton {
+        position: fixed; /* Fixed positioning to stay in the center of the viewport */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        width: 300px;
+        height: 700px;
+        opacity: 0;
+        pointer-events: auto; /* Ensure the button itself is clickable */
+      }
+
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <button id="moveCameraButton"></button>
+      <canvas id="canvas_main"></canvas>
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

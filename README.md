@@ -1,4 +1,3 @@
-# FinalProjekt_WebGL
 # Concept and Decisions
 ## Shadows
 I decided not to use shadows for the character to keep the performance high. Shadows aren't crucial for this project, so I thought it would be best to keep things running smoothly.

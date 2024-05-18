@@ -6,31 +6,24 @@ import {
   Clock,
   MathUtils,
   AmbientLight,
-  Vector3,
   PointLight,
-  PointLightHelper,
   TextureLoader,
-  AnimationMixer,
-  ShaderMaterial
 } from 'three';
 
 import { DragGesture } from '@use-gesture/vanilla';
 import Stats from 'stats.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import * as dat from 'dat.gui';
 import Postprocessing from './Postprocessing';
 import store from "./store";
 import { damp } from 'maath/easing';
 
-import vertex from './shaders/vertex.glsl';
-import fragment from './shaders/fragment.glsl';
-
+import loadGLTF from './loadBackground';
 import Tiles from './Sliders';
 
 const TL = new TextureLoader();
 
 export default class App {
-  constructor(debug = true) {
+  constructor(debug = false) {
     this.numParticles = 500;
 
     this.debug = debug;
@@ -65,9 +58,7 @@ export default class App {
     this._scene = new Scene();
     this._scene.background = new Color(0x040d11);
 
-    // Initialize scene objects
-
-    // Stats (conditionally initialize)
+    // Stats
     if (this.debug) {
       this._stats = new Stats();
       document.body.appendChild(this._stats.dom);
@@ -103,16 +94,16 @@ export default class App {
 
     // Point Light
     this._pointLight = new PointLight(0xcab4b3, 1, 400);
-    this._pointLight.position.set(0, 0, 10); // Adjust this position as needed
+    this._pointLight.position.set(0, 0, 10);
     this._scene.add(this._pointLight);
 
-    // Set properties for Point Light
+    // properties PL
     this._pointLight.intensity = 65940;
     this._pointLight.distance = 2781;
     this._pointLight.decay = 1.04;
     this._pointLight.position.set(-197, 70, -1761);
 
-    // Point Light
+    // Add
     this._Pl1 = new PointLight(0xcab4b3, 1, 400);
     this._scene.add(this._Pl1);
 
@@ -122,11 +113,10 @@ export default class App {
     this._Pl1.decay = 1.24;
     this._Pl1.position.set(40, -1600, -500);
 
-    // GUI for Point Light (conditionally initialize)
+    // GUI for Point Light
     if (this.debug) {
       const gui = new dat.GUI();
       const pointLightFolder = gui.addFolder('Point Light');
-      pointLightFolder.addColor(new ColorGUIHelper(this._pointLight, 'color'), 'value').name('color');
       pointLightFolder.add(this._pointLight, 'intensity', 0, 600000, 0.05).setValue(65940);
       pointLightFolder.add(this._pointLight, 'distance', 0, 30000).setValue(2119);
       pointLightFolder.add(this._pointLight, 'decay', 0, 3, 0.04).setValue(1.04);
@@ -142,51 +132,10 @@ export default class App {
     this._tiles = tiles;
     this._scene.add(tiles);
 
-    this._loadGLTF();
-  }
-
-  _loadGLTF() {
-    const loader = new GLTFLoader();
-    loader.load(
-      '/space.glb', // Replace with the path to your GLB file
-      (gltf) => {
-        this._gltfScene = gltf.scene;
-        this._scene.add(this._gltfScene);
-
-        // Set the position of the GLB model
-        this._gltfScene.position.set(0, 0, 2000); // Adjust these values to your desired position
-
-        // Set the scale of the GLB model
-        this._gltfScene.scale.set(1000, 1000, 1000); // Adjust these values to your desired scale
-
-        // Apply custom shaders
-        const shaderMaterial = new ShaderMaterial({
-          vertexShader: vertex,
-          fragmentShader: fragment,
-          uniforms: {
-            time: { value: 0.0 },
-          },
-        });
-
-        this._gltfScene.traverse((child) => {
-          if (child.isMesh) {
-            child.material = shaderMaterial;
-          }
-        });
-
-        // If the model has animations, set up the animation mixer
-        if (gltf.animations && gltf.animations.length > 0) {
-          this._mixer = new AnimationMixer(this._gltfScene);
-          gltf.animations.forEach((clip) => {
-            this._mixer.clipAction(clip).play();
-          });
-        }
-      },
-      undefined,
-      (error) => {
-        console.error('An error happened while loading the GLTF model:', error);
-      }
-    );
+    loadGLTF(this._scene, (gltfScene, mixer) => {
+      this._gltfScene = gltfScene;
+      this._mixer = mixer;
+    });
   }
 
   _setDPR() {
@@ -220,13 +169,13 @@ export default class App {
     store.loaderManager.onLoad = () => {
       this._onLoaded()
     }
-    // Mouse move event to add points to the water texture
+    // Mouse move event to add points to the disortion texture
     window.addEventListener('mousemove', (ev) => {
       const point = {
         x: ev.clientX / window.innerWidth,
         y: ev.clientY / window.innerHeight,
       };
-      this._composer.waterTexture.addPoint(point);
+      this._composer.distortionTexture.addPoint(point);
     });
 
     // Mouse move event to orbit the camera
@@ -247,20 +196,15 @@ export default class App {
   }
 
   _onMouseMove(event) {
-    // Normalize mouse position from -1 to 1
     const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
     const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
   
-    // Set rotation limits
-    const maxRotationX = 0.02; // Adjust for subtlety
-    const maxRotationY = 0.07; // Adjust for subtlety
-  
-    // Calculate the target rotation
+    const maxRotationX = 0.02;
+    const maxRotationY = 0.07;
     this.targetRotationX = mouseY * maxRotationX;
     this.targetRotationY = mouseX * maxRotationY;
   }
   
-  // Animate and apply damping to camera rotation
   _animate() {
     if (this.debug) {
       this._stats.begin();
@@ -280,7 +224,6 @@ export default class App {
       this._stats.end();
     }
   
-    // Update the animation mixer if it exists
     if (this._mixer) {
       this._mixer.update(delta * 4);
   
@@ -291,26 +234,9 @@ export default class App {
         }
       });
     }
-  
-    // Apply damping to camera rotation
     damp(this._camera.rotation, 'x', this.targetRotationX, 0.1, delta);
     damp(this._camera.rotation, 'y', this.targetRotationY, 0.1, delta);
   
     window.requestAnimationFrame(this._animate.bind(this));
-  }
-}
-
-class ColorGUIHelper {
-  constructor(object, prop) {
-    this.object = object;
-    this.prop = prop;
-  }
-
-  get value() {
-    return `#${this.object[this.prop].getHexString()}`;
-  }
-
-  set value(hexString) {
-    this.object[this.prop].set(hexString);
   }
 }

@@ -1,8 +1,9 @@
 
+
 import { ShaderMaterial, WebGLRenderer } from 'three';
 import { EffectComposer, RenderPass, ShaderPass, SelectiveBloomEffect, EffectPass } from 'postprocessing';
-import WaterTexture from './WaterDistortion';
-import { WaterEffect } from './WatterEffect';
+import DistortionTexture from './Distortion';
+import { DistortionEffect } from './DistortionEffect';
 
 import vertex from './shaders/vertex.glsl';
 import fragment from './shaders/fragment.glsl';
@@ -12,7 +13,7 @@ export default class Postprocessing {
         this._gl = gl;
         this._scene = scene;
         this._camera = camera;
-        this.waterTexture = new WaterTexture({ debug: false }); 
+        this.distortionTexture = new DistortionTexture({ debug: false }); 
 
         this._init();
     }
@@ -28,11 +29,11 @@ export default class Postprocessing {
         const renderPass = new RenderPass(this._scene, this._camera);
         composer.addPass(renderPass);
 
-        // WATER EFFECT
-        const waterEffect = new WaterEffect(this.waterTexture.texture);
-        const waterPass = new EffectPass(this._camera, waterEffect);
+        // distortion EFFECT
+        const distortionEffect = new DistortionEffect(this.distortionTexture.texture);
+        const distortionPass = new EffectPass(this._camera, distortionEffect);
 
-        composer.addPass(waterPass);
+        composer.addPass(distortionPass);
 
         // BLOOM EFFECT
         const bloomEffect = new SelectiveBloomEffect(this._scene, this._camera, {
@@ -69,7 +70,7 @@ export default class Postprocessing {
     }
 
     render() {
-        this.waterTexture.update();
+        this.distortionTexture.update();
         this._composer.render();
     }
 }

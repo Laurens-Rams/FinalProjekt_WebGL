@@ -6,7 +6,6 @@ import {
   Mesh, 
   AlwaysStencilFunc, 
   ReplaceStencilOp, 
-  EqualStencilFunc, 
   MeshPhongMaterial, 
   MeshStandardMaterial, 
   Box3, 
@@ -176,10 +175,10 @@ export default class Tiles extends Group {
   _handleGLBModels(objectGroup, glbPath, glbPath_landscape, index, animationName, stencilMesh) {
     if (index === 6) {
       this._targetObjectGroup = objectGroup;
-      this._targetModelScaleFactor = stencilMesh.scale.x * 0.05;
+      this._targetModelScaleFactor = stencilMesh.scale.x * 0.075;
       addGLBToTile(objectGroup, glbPath, index, this._mixers, animationName, stencilMesh, this._targetModelScaleFactor, false);
     } else {
-      addGLBToTile(objectGroup, glbPath, index, this._mixers, animationName, stencilMesh, stencilMesh.scale.x * 0.05);
+      addGLBToTile(objectGroup, glbPath, index, this._mixers, animationName, stencilMesh, stencilMesh.scale.x * 0.075);
     }
 
     addGLBToTileNoAnimation(objectGroup, glbPath_landscape, index, stencilMesh, stencilMesh.scale.x * 0.015);
@@ -242,8 +241,8 @@ export default class Tiles extends Group {
       }, 950);
     }
 
-    const deltaX = state.delta[0] * 0.002;
-    const deltaY = state.delta[1] * 0.002;
+    const deltaX = state.delta[0] * 0.0016;
+    const deltaY = state.delta[1] * 0.0016;
     this._targetRotation.y -= deltaX;
     this._targetRotation.x = MathUtils.clamp(this._targetRotation.x - deltaY, -this._maxYRotation, this._maxYRotation);
   }

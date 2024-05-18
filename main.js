@@ -1,4 +1,3 @@
-import './style.css';
 import { DragGesture } from '@use-gesture/vanilla';
 import App from './App';
 
@@ -10,5 +9,6 @@ el.style.touchAction = 'none';
 const gesture = new DragGesture(el, (state) => {
   app.onDrag(state);
 });
+
 
 history.scrollRestoration = "manual"

@@ -1,84 +1,75 @@
+
 import { ShaderMaterial, WebGLRenderer } from 'three';
-import { EffectComposer, RenderPass, ShaderPass, SelectiveBloomEffect, EffectPass, KernelSize } from 'postprocessing';
+import { EffectComposer, RenderPass, ShaderPass, SelectiveBloomEffect, EffectPass } from 'postprocessing';
+import WaterTexture from './WaterDistortion';
+import { WaterEffect } from './WatterEffect';
 
 import vertex from './shaders/vertex.glsl';
 import fragment from './shaders/fragment.glsl';
 
 export default class Postprocessing {
-  constructor({ gl, scene, camera }) {
-    this._gl = gl;
-    this._scene = scene;
-    this._camera = camera;
+    constructor({ gl, scene, camera }) {
+        this._gl = gl;
+        this._scene = scene;
+        this._camera = camera;
+        this.waterTexture = new WaterTexture({ debug: false }); 
 
-    this._init();
-  }
+        this._init();
+    }
 
-  _init() {
-    // Enable stencil buffer on WebGLRenderer
-    //this._gl.setPixelRatio(window.devicePixelRatio);
-    //this._gl.setSize(window.innerWidth, window.innerHeight);
-    this._gl.autoClear = false;
+    _init() {
+        this._gl.autoClear = false;
 
-    // COMPOSER
-    const composer = new EffectComposer(this._gl, {stencilBuffer:true});
-    this._composer = composer;
+        // COMPOSER
+        const composer = new EffectComposer(this._gl, { stencilBuffer: true });
+        this._composer = composer;
 
-    // RENDERPASS
-    const renderPass = new RenderPass(this._scene, this._camera);
-    composer.addPass(renderPass);
+        // RENDERPASS
+        const renderPass = new RenderPass(this._scene, this._camera);
+        composer.addPass(renderPass);
 
-    // SHADERPASS
-    const shaderMaterial = new ShaderMaterial({
-      vertexShader: vertex,
-      fragmentShader: fragment,
-      uniforms: {
-        uPrevInput: { value: null },
-      },
-    });
+        // WATER EFFECT
+        const waterEffect = new WaterEffect(this.waterTexture.texture);
+        const waterPass = new EffectPass(this._camera, waterEffect);
 
-    const shaderPass = new ShaderPass(shaderMaterial, 'uPrevInput');
-    
-    composer.addPass(shaderPass);
+        composer.addPass(waterPass);
 
-    // BLOOM EFFECT
-    const bloomEffect = new SelectiveBloomEffect(this._scene,this._camera, {
-        mipmapBlur: true,
-        intensity: 3.5,
-        radius: 0.6,
-        luminanceThreshold: 0.4,
-        levels: 4
-    });
+        // BLOOM EFFECT
+        const bloomEffect = new SelectiveBloomEffect(this._scene, this._camera, {
+            mipmapBlur: true,
+            intensity: 3.2,
+            radius: 0.5,
+            luminanceThreshold: 0.4,
+            levels: 4,
+        });
 
-    this._scene.traverse(element => {
-        if(element.isMesh) {
-            console.log(element.name, element.userData);
-        }
-    })
-    this._bloomEffect = bloomEffect;
+        this._scene.traverse((element) => {
+            if (element.isMesh) {
+                console.log(element.name, element.userData);
+            }
+        });
+        this._bloomEffect = bloomEffect;
 
-    // EFFECTPASS
-    const effectPass = new EffectPass(this._camera, bloomEffect);
-    composer.addPass(effectPass);
-  }
+        // EFFECTPASS
+        const effectPass = new EffectPass(this._camera, bloomEffect);
+        composer.addPass(effectPass);
 
-  createBloomSelection(){
-    const { selection } = this._bloomEffect
+        // Render to screen
+        effectPass.renderToScreen = true;
+    }
 
-    this._scene.traverse(element => {
-        if(element.isMesh && element.userData?.isSelectedForBloom) {
-            selection.add(element)
-        }
-    })
-  }
+    createBloomSelection() {
+        const { selection } = this._bloomEffect;
 
-  render() {
-    this._composer.render();
-  }
+        this._scene.traverse((element) => {
+            if (element.isMesh && element.userData?.isSelectedForBloom) {
+                selection.add(element);
+            }
+        });
+    }
+
+    render() {
+        this.waterTexture.update();
+        this._composer.render();
+    }
 }
-
-// kernelSize: KernelSize.VERY_LARGE,
-// intensity: 1.2, 
-// distinction: 1.0, 
-// luminanceThreshold: 0.4, 
-// luminanceSmoothing: 0.5, // Smoothing for the luminance threshold
-// resolutionScale: 0.5,

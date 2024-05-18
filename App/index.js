@@ -14,15 +14,13 @@ import {
   ShaderMaterial
 } from 'three';
 
-
 import { DragGesture } from '@use-gesture/vanilla';
-
 import Stats from 'stats.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as dat from 'dat.gui';
 import Postprocessing from './Postprocessing';
 import store from "./store";
+import { damp } from 'maath/easing';
 
 import vertex from './shaders/vertex.glsl';
 import fragment from './shaders/fragment.glsl';
@@ -33,12 +31,14 @@ const TL = new TextureLoader();
 
 export default class App {
   constructor(debug = true) {
-    this.spreadX = 50;
-    this.spreadY = 50;
-    this.spreadZ = 50;
     this.numParticles = 500;
 
     this.debug = debug;
+
+    this.mouseX = 0;
+    this.mouseY = 0;
+    this.targetRotationX = 0;
+    this.targetRotationY = 0;
 
     this._init();
   }
@@ -52,6 +52,7 @@ export default class App {
       logarithmicDepthBuffer: true
     });
     this._gl.setSize(window.innerWidth, window.innerHeight);
+
     this._setDPR();
 
     // Camera
@@ -89,7 +90,6 @@ export default class App {
 
     // Event Listeners
     this._initEvents();
-    // this._controls = new OrbitControls(this._camera, this._gl.domElement);
 
     // Animation
     this._animate();
@@ -108,21 +108,19 @@ export default class App {
 
     // Set properties for Point Light
     this._pointLight.intensity = 65940;
-    this._pointLight.distance = 2119;
+    this._pointLight.distance = 2781;
     this._pointLight.decay = 1.04;
     this._pointLight.position.set(-197, 70, -1761);
 
+    // Point Light
+    this._Pl1 = new PointLight(0xcab4b3, 1, 400);
+    this._scene.add(this._Pl1);
 
-     // Point Light
-     this._Pl1 = new PointLight(0xcab4b3, 1, 400);
-     this._scene.add(this._Pl1);
- 
-     // Set properties for Point Light
-     this._Pl1.intensity = 22000;
-     this._Pl1.distance = 2119;
-     this._Pl1.decay = 1.24;
-     this._Pl1.position.set(40, -1600, -500);
-
+    // Set properties for Point Light
+    this._Pl1.intensity = 22000;
+    this._Pl1.distance = 2119;
+    this._Pl1.decay = 1.24;
+    this._Pl1.position.set(40, -1600, -500);
 
     // GUI for Point Light (conditionally initialize)
     if (this.debug) {
@@ -169,7 +167,7 @@ export default class App {
             time: { value: 0.0 },
           },
         });
-    
+
         this._gltfScene.traverse((child) => {
           if (child.isMesh) {
             child.material = shaderMaterial;
@@ -191,9 +189,8 @@ export default class App {
     );
   }
 
-
   _setDPR() {
-    const dpr = MathUtils.clamp(window.devicePixelRatio, 1, 1.3);
+    const dpr = MathUtils.clamp(window.devicePixelRatio, 1, 1.);
     this._gl.setPixelRatio(dpr);
   }
 
@@ -203,7 +200,6 @@ export default class App {
 
   onDragEnd() {
     this._tiles.onDragEnd();
-    console.log("end")
   }
 
   _initEvents() {
@@ -224,6 +220,17 @@ export default class App {
     store.loaderManager.onLoad = () => {
       this._onLoaded()
     }
+    // Mouse move event to add points to the water texture
+    window.addEventListener('mousemove', (ev) => {
+      const point = {
+        x: ev.clientX / window.innerWidth,
+        y: ev.clientY / window.innerHeight,
+      };
+      this._composer.waterTexture.addPoint(point);
+    });
+
+    // Mouse move event to orbit the camera
+    window.addEventListener('mousemove', this._onMouseMove.bind(this));
   }
 
   _onLoaded() {
@@ -239,6 +246,21 @@ export default class App {
     this._camera.updateProjectionMatrix();
   }
 
+  _onMouseMove(event) {
+    // Normalize mouse position from -1 to 1
+    const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+    const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+  
+    // Set rotation limits
+    const maxRotationX = 0.02; // Adjust for subtlety
+    const maxRotationY = 0.07; // Adjust for subtlety
+  
+    // Calculate the target rotation
+    this.targetRotationX = mouseY * maxRotationX;
+    this.targetRotationY = mouseX * maxRotationY;
+  }
+  
+  // Animate and apply damping to camera rotation
   _animate() {
     if (this.debug) {
       this._stats.begin();
@@ -264,12 +286,15 @@ export default class App {
   
       this._gltfScene.traverse((child) => {
         if (child.isMesh) {
-          // Example effect: Pulsating intensity
           const time = Date.now() * 1.0;
           child.material.uniforms.time.value = time;
         }
       });
     }
+  
+    // Apply damping to camera rotation
+    damp(this._camera.rotation, 'x', this.targetRotationX, 0.1, delta);
+    damp(this._camera.rotation, 'y', this.targetRotationY, 0.1, delta);
   
     window.requestAnimationFrame(this._animate.bind(this));
   }

@@ -1,7 +1,4 @@
 # FinalProjekt_WebGL
-## Overview
-This WebGL application, built with Three.js, showcases interactive 3D models with custom shaders and post-processing effects. The environment is designed to be dynamic and responsive, featuring draggable and scrollable elements for an engaging user experience.
-
 # Concept and Decisions
 ## Shadows
 I decided not to use shadows for the character to keep the performance high. Shadows aren't crucial for this project, so I thought it would be best to keep things running smoothly.

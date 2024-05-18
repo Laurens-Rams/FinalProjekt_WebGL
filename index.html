@@ -32,23 +32,10 @@
         z-index: 100;
       }
 
-      #moveCameraButton {
-        position: fixed; /* Fixed positioning to stay in the center of the viewport */
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-        width: 300px;
-        height: 700px;
-        opacity: 0;
-        pointer-events: auto; /* Ensure the button itself is clickable */
-      }
-
     </style>
   </head>
   <body>
     <div id="app">
-      <button id="moveCameraButton"></button>
       <canvas id="canvas_main"></canvas>
     </div>
     <script type="module" src="/main.js"></script>

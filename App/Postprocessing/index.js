@@ -42,16 +42,10 @@ export default class Postprocessing {
 
     // BLOOM EFFECT
     const bloomEffect = new SelectiveBloomEffect(this._scene,this._camera, {
-        // kernelSize: KernelSize.VERY_LARGE,
-        // intensity: 10.2, 
-        // distinction: 1.0, 
-        // luminanceThreshold: 0.0, 
-        // luminanceSmoothing: 0.5, // Smoothing for the luminance threshold
-        // resolutionScale: 0.5,
         mipmapBlur: true,
-        intensity: 3,
-        radius: 0.7,
-        luminanceThreshold: 0.3,
+        intensity: 3.5,
+        radius: 0.6,
+        luminanceThreshold: 0.4,
         levels: 4
     });
 

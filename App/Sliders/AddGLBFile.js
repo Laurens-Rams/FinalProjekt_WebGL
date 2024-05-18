@@ -31,6 +31,7 @@ export function addGLBToTile(tileGroup, glbPath, index, mixers, animationName, s
         child.material.metalness = 0.1; 
         child.material.roughness = 0.8;
         child.material.color.set(0x999999);
+        
 
         child.material.side = FrontSide 
         child.matrixAutoUpdate = false
